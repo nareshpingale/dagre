@@ -311,6 +311,7 @@ function debugOrdering(g) {
 }
 
 },{"./graphlib":7,"./lodash":10,"./util":29}],7:[function(require,module,exports){
+// eslint-disable-next-line no-redeclare
 /* global window */
 
 var graphlib;
@@ -474,13 +475,16 @@ function layout(g, opts) {
   time("layout", function() {
     var layoutGraph = 
       time("  buildLayoutGraph", function() { return buildLayoutGraph(g); });
+    // 控制是否为边的label留位置（这会影响是否在边中间添加dummy node）
+    if (opts && opts.edgeLabelSpace) {
+      time("  makeSpaceForEdgeLabels", function() { makeSpaceForEdgeLabels(layoutGraph); });
+    }
     time("  runLayout",        function() { runLayout(layoutGraph, time); });
     time("  updateInputGraph", function() { updateInputGraph(g, layoutGraph); });
   });
 }
 
 function runLayout(g, time) {
-  time("    makeSpaceForEdgeLabels", function() { makeSpaceForEdgeLabels(g); });
   time("    removeSelfEdges",        function() { removeSelfEdges(g); });
   time("    acyclic",                function() { acyclic.run(g); });
   time("    nestingGraph.run",       function() { nestingGraph.run(g); });
@@ -549,7 +553,7 @@ function updateInputGraph(inputGraph, layoutGraph) {
 var graphNumAttrs = ["nodesep", "edgesep", "ranksep", "marginx", "marginy"];
 var graphDefaults = { ranksep: 50, edgesep: 20, nodesep: 50, rankdir: "tb" };
 var graphAttrs = ["acyclicer", "ranker", "rankdir", "align"];
-var nodeNumAttrs = ["width", "height"];
+var nodeNumAttrs = ["width", "height", "layer", "fixorder"]; // 需要传入layer, fixOrder作为参数参考
 var nodeDefaults = { width: 0, height: 0 };
 var edgeNumAttrs = ["minlen", "weight", "width", "height", "labeloffset"];
 var edgeDefaults = {
@@ -601,6 +605,12 @@ function buildLayoutGraph(inputGraph) {
 function makeSpaceForEdgeLabels(g) {
   var graph = g.graph();
   graph.ranksep /= 2;
+  _.forEach(g.nodes(), function(n) {
+    var node = g.node(n);
+    if (!isNaN(node.layer)) {
+      node.layer *= 2; // TODO: 因为默认的rank变为两倍，设定的layer也*2
+    }
+  });
   _.forEach(g.edges(), function(e) {
     var edge = g.edge(e);
     edge.minlen *= 2;
@@ -844,6 +854,7 @@ function canonicalize(attrs) {
 }
 
 },{"./acyclic":2,"./add-border-segments":3,"./coordinate-system":4,"./graphlib":7,"./lodash":10,"./nesting-graph":11,"./normalize":12,"./order":17,"./parent-dummy-chains":22,"./position":24,"./rank":26,"./util":29}],10:[function(require,module,exports){
+// eslint-disable-next-line no-redeclare
 /* global window */
 
 var lodash;
@@ -1460,6 +1471,19 @@ function initOrder(g) {
   }
 
   var orderedVs = _.sortBy(simpleNodes, function(v) { return g.node(v).rank; });
+
+  // 有fixOrder的，直接排序好放进去
+  var fixOrderNodes = _.sortBy(_.filter(orderedVs, function (n) {
+    return g.node(n).fixorder !== undefined;
+  }), function(n) {
+    return g.node(n).fixorder;
+  });
+
+  _.forEach(fixOrderNodes, function(n) {
+    layers[g.node(n).rank].push(n);
+    visited[n] = true;
+  });
+
   _.forEach(orderedVs, dfs);
 
   return layers;
@@ -1599,6 +1623,8 @@ module.exports = sortSubgraph;
 
 function sortSubgraph(g, v, cg, biasRight) {
   var movable = g.children(v);
+  // fixorder的点不参与排序（这个方案不合适，只排了新增节点，和原来的分离）
+  // var movable = _.filter(g.children(v), function(v) { return g.node(v).fixorder === undefined; });
   var node = g.node(v);
   var bl = node ? node.borderLeft : undefined;
   var br = node ? node.borderRight: undefined;
@@ -1623,6 +1649,12 @@ function sortSubgraph(g, v, cg, biasRight) {
 
   var entries = resolveConflicts(barycenters, cg);
   expandSubgraphs(entries, subgraphs);
+
+  // 添加fixorder信息到entries里边
+  // TODO: 不考虑复合情况，只用第一个点的fixorder信息，后续考虑更完备的实现
+  _.forEach(entries, function (e) {
+    e.fixorder = g.node(e.vs[0]).fixorder;
+  });
 
   var result = sort(entries, biasRight);
 
@@ -1716,6 +1748,10 @@ function consumeUnsortable(vs, unsortable, index) {
 
 function compareWithBias(bias) {
   return function(entryV, entryW) {
+    // 排序的时候先判断fixorder，不行再判断重心
+    if (entryV.fixorder !== undefined && entryW.fixorder !== undefined) {
+      return entryV.fixorder - entryW.fixorder;
+    }
     if (entryV.barycenter < entryW.barycenter) {
       return -1;
     } else if (entryV.barycenter > entryW.barycenter) {
@@ -2274,7 +2310,8 @@ var _ = require("../lodash");
 var Graph = require("../graphlib").Graph;
 var slack = require("./util").slack;
 
-module.exports = feasibleTree;
+// module.exports = feasibleTree;
+module.exports = feasibleTreeWithLayer;
 
 /*
  * Constructs a spanning tree with tight edges and adjusted the input node's
@@ -2329,6 +2366,72 @@ function tightTree(t, g) {
       var edgeV = e.v,
         w = (v === edgeV) ? e.w : edgeV;
       if (!t.hasNode(w) && !slack(g, e)) {
+        t.setNode(w, {});
+        t.setEdge(v, w, {});
+        dfs(w);
+      }
+    });
+  }
+
+  _.forEach(t.nodes(), dfs);
+  return t.nodeCount();
+}
+
+/*
+ * Constructs a spanning tree with tight edges and adjusted the input node's
+ * ranks to achieve this. A tight edge is one that is has a length that matches
+ * its "minlen" attribute.
+ *
+ * The basic structure for this function is derived from Gansner, et al., "A
+ * Technique for Drawing Directed Graphs."
+ *
+ * Pre-conditions:
+ *
+ *    1. Graph must be a DAG.
+ *    2. Graph must be connected.
+ *    3. Graph must have at least one node.
+ *    5. Graph nodes must have been previously assigned a "rank" property that
+ *       respects the "minlen" property of incident edges.
+ *    6. Graph edges must have a "minlen" property.
+ *
+ * Post-conditions:
+ *
+ *    - Graph nodes will have their rank adjusted to ensure that all edges are
+ *      tight.
+ *
+ * Returns a tree (undirected graph) that is constructed using only "tight"
+ * edges.
+ */
+function feasibleTreeWithLayer(g) {
+  var t = new Graph({ directed: false });
+
+  // Choose arbitrary node from which to start our tree
+  var start = g.nodes()[0];
+  var size = g.nodeCount();
+  t.setNode(start, {});
+
+  var edge, delta;
+  while (tightTreeWithLayer(t, g) < size) {
+    edge = findMinSlackEdge(t, g);
+    delta = t.hasNode(edge.v) ? slack(g, edge) : -slack(g, edge);
+    shiftRanks(t, g, delta);
+  }
+
+  return t;
+}
+
+
+/*
+ * Finds a maximal tree of tight edges and returns the number of nodes in the
+ * tree.
+ */
+function tightTreeWithLayer(t, g) {
+  function dfs(v) {
+    _.forEach(g.nodeEdges(v), function(e) {
+      var edgeV = e.v,
+        w = (v === edgeV) ? e.w : edgeV;
+      // 对于指定layer的，直接加入tight-tree，不参与调整
+      if (!t.hasNode(w) && (g.node(w).layer !== undefined || !slack(g, e))) {
         t.setNode(w, {});
         t.setEdge(v, w, {});
         dfs(w);
@@ -2650,8 +2753,9 @@ function isDescendant(tree, vLabel, rootLabel) {
 var _ = require("../lodash");
 
 module.exports = {
-  longestPath: longestPath,
-  slack: slack
+  // longestPath: longestPath,
+  longestPath: longestPathWithLayer,
+  slack: slack,
 };
 
 /*
@@ -2699,6 +2803,28 @@ function longestPath(g) {
   }
 
   _.forEach(g.sources(), dfs);
+}
+
+function longestPathWithLayer(g) {
+  function dfs(v, nextRank) {
+    var label = g.node(v);
+
+    var currRank = !isNaN(label.layer) ? label.layer : nextRank;
+
+    // 没有指定，取最大值
+    if (label.rank === undefined || label.rank < currRank) {
+      label.rank = currRank;
+    }
+
+    // DFS遍历子节点
+    _.map(g.outEdges(v), function (e) {
+      dfs(e.w, currRank + g.edge(e).minlen);
+    });
+  }
+
+  g.sources().forEach(function (root) {
+    dfs(root, -1); // 默认的dummy root所在层的rank是-1
+  });
 }
 
 /*
@@ -2950,7 +3076,7 @@ function notime(name, fn) {
 }
 
 },{"./graphlib":7,"./lodash":10}],30:[function(require,module,exports){
-module.exports = "0.8.5";
+module.exports = "0.8.6-pre";
 
 },{}]},{},[1])(1)
 });
