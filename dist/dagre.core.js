@@ -546,6 +546,8 @@ function updateInputGraph(inputGraph, layoutGraph) {
     if (inputLabel) {
       inputLabel.x = layoutLabel.x;
       inputLabel.y = layoutLabel.y;
+      inputLabel._order = layoutLabel.order;
+      inputLabel._rank = layoutLabel.rank;
 
       if (layoutGraph.children(v).length) {
         inputLabel.width = layoutLabel.width;
