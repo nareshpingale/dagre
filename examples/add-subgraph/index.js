@@ -215,11 +215,14 @@ function drawGraph(g, svg) {
 
   const link = svg.selectAll(".edge").data(edges);
 
+  const easeFunc = d3.easeElasticOut.amplitude(1.).period(0.9);
+
   link
     .enter()
     .append("line")
     .transition()
-    .duration(500)
+    .duration(1000)
+    .ease(easeFunc)
     .attr("class", "edge")
     .attr("stroke", "black")
     .attr("x1", (d) => d.source.x)
@@ -238,7 +241,8 @@ function drawGraph(g, svg) {
 
   link
     .transition()
-    .duration(500)
+    .duration(1000)
+    .ease(easeFunc)
     .attr("x1", (d) => d.source.x)
     .attr("y1", (d) => d.source.y)
     .attr("x2", (d) => d.target.x)
@@ -249,7 +253,7 @@ function drawGraph(g, svg) {
   //     .join(" ")} ${d.target.x}, ${d.target.y}`;
   // });
 
-  link.exit().transition().duration(500).remove();
+  link.exit().transition().duration(1000).remove();
 
   const node = svg.selectAll(".node").data(nodes);
 
@@ -257,7 +261,8 @@ function drawGraph(g, svg) {
     .enter()
     .append("rect")
     .transition()
-    .duration(500)
+    .duration(1000)
+    .ease(easeFunc)
     .style("fill", (d) => d.color)
     .attr("rx", 5)
     .attr("class", "node")
@@ -269,7 +274,8 @@ function drawGraph(g, svg) {
   node
     .raise()
     .transition()
-    .duration(500)
+    .duration(1000)
+    .ease(easeFunc)
     .attr("x", (d) => d.x - (d.width ?? 20) / 2)
     .attr("y", (d) => d.y - (d.height ?? 20) / 2);
 
