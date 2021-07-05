@@ -94,7 +94,7 @@ const g0 = createGraph({
 });
 
 g0.setGraph({
-  randkir: "lr",
+  rankdir: "LR",
 });
 
 dagre.layout(g0, {
@@ -107,20 +107,28 @@ dagre.layout(g0, {
   drawGraph(g0, div);
 }
 
-const g1 = createGraph(data1);
+const originGraph = createGraph(data1);
 const g2 = createGraph({
   nodes: [...data1.nodes, ...data2.nodes],
   edges: [...data1.edges, ...data2.edges],
 });
 
-dagre.layout(g1, {
+originGraph.setGraph({
+  rankdir: "LR",
+});
+
+g2.setGraph({
+  rankdir: "LR",
+});
+
+dagre.layout(originGraph, {
   edgeLabelSpace: false,
 });
 
 {
   const div = document.createElement("div");
   document.body.appendChild(div);
-  drawGraph(g1, div);
+  drawGraph(originGraph, div);
 }
 
 dagre.layout(
@@ -128,7 +136,7 @@ dagre.layout(
   {
     edgeLabelSpace: false,
   },
-  g1
+  originGraph
 );
 
 {
@@ -182,7 +190,7 @@ function drawGraph(g, container) {
     return res;
   });
 
-  svg
+  const link = svg
     .selectAll(".edge")
     .data(edges)
     .enter()
