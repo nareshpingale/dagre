@@ -528,6 +528,8 @@ function inheritOrder(currG, prevG) {
       var node = currG.node(n);
       node.fixorder = prevNodeMap[n]._order;
       delete prevNodeMap[n]._order;
+    } else {
+      delete node.fixorder;
     }
   });
 }
@@ -1674,7 +1676,9 @@ function sortSubgraph(g, v, cg, biasRight) {
   // 添加fixorder信息到entries里边
   // TODO: 不考虑复合情况，只用第一个点的fixorder信息，后续考虑更完备的实现
   _.forEach(entries, function (e) {
-    e.fixorder = g.node(e.vs[0]).fixorder;
+    var node = g.node(e.vs[0]);
+    e.fixorder = node.fixorder;
+    e.order = node.order;
   });
 
   var result = sort(entries, biasRight);
@@ -1777,6 +1781,14 @@ function compareWithBias(bias) {
       return -1;
     } else if (entryV.barycenter > entryW.barycenter) {
       return 1;
+    }
+    // 重心相同，考虑之前排好的顺序
+    if (entryV.order !== undefined && entryW.order !== undefined) {
+      if (entryV.order < entryW.order) {
+        return -1;
+      } else if (entryV.order > entryW.order) {
+        return 1;
+      }
     }
 
     return !bias ? entryV.i - entryW.i : entryW.i - entryV.i;
