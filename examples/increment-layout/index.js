@@ -98,14 +98,20 @@ g0.setGraph({
 });
 
 dagre.layout(g0, {
-  edgeLabelSpace: false,
+  edgeLabelSpace: true,
 });
+
+// dagre.layout(g0, {
+//   edgeLabelSpace: false,
+// });
 
 {
   const div = document.createElement("div");
   document.body.appendChild(div);
   drawGraph(g0, div);
 }
+
+/*
 
 const originGraph = createGraph(data1);
 const g2 = createGraph({
@@ -144,6 +150,7 @@ dagre.layout(
   document.body.appendChild(div);
   drawGraph(g2, div);
 }
+*/
 
 function createGraph(data) {
   // Create a new directed graph
@@ -152,8 +159,8 @@ function createGraph(data) {
   // Set an object for the graph label
   g.setGraph({
     // ranker: "longest-path",
-    ranker: "tight-tree",
-    // ranker: "network-complex",
+    // ranker: "tight-tree",
+    ranker: "network-complex",
   });
 
   // Default to assigning a new object as a label for each new edge.

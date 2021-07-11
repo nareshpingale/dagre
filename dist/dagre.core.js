@@ -480,7 +480,7 @@ function layout(g, opts, prevG) {
     var layoutGraph = 
       time("  buildLayoutGraph", function() { return buildLayoutGraph(g); });
     // 控制是否为边的label留位置（这会影响是否在边中间添加dummy node）
-    if (opts && opts.edgeLabelSpace) {
+    if (!(opts && (opts.edgeLabelSpace === false))) {
       time("  makeSpaceForEdgeLabels", function() { makeSpaceForEdgeLabels(layoutGraph); });
     }
     time("  runLayout",        function() { runLayout(layoutGraph, time); });
@@ -524,8 +524,8 @@ function runLayout(g, time) {
 function inheritOrder(currG, prevG) {
   var prevNodeMap = prevG._nodes;
   _.forEach(currG.nodes(), function (n) {
+    var node = currG.node(n);
     if (prevNodeMap[n] !== undefined) {
-      var node = currG.node(n);
       node.fixorder = prevNodeMap[n]._order;
       delete prevNodeMap[n]._order;
     } else {
@@ -1783,13 +1783,13 @@ function compareWithBias(bias) {
       return 1;
     }
     // 重心相同，考虑之前排好的顺序
-    if (entryV.order !== undefined && entryW.order !== undefined) {
-      if (entryV.order < entryW.order) {
-        return -1;
-      } else if (entryV.order > entryW.order) {
-        return 1;
-      }
-    }
+    // if (entryV.order !== undefined && entryW.order !== undefined) {
+    //   if (entryV.order < entryW.order) {
+    //     return -1;
+    //   } else if (entryV.order > entryW.order) {
+    //     return 1;
+    //   }
+    // }
 
     return !bias ? entryV.i - entryW.i : entryW.i - entryV.i;
   };
@@ -2344,7 +2344,10 @@ var Graph = require("../graphlib").Graph;
 var slack = require("./util").slack;
 
 // module.exports = feasibleTree;
-module.exports = feasibleTreeWithLayer;
+module.exports = {
+  feasibleTree: feasibleTree,
+  feasibleTreeWithLayer: feasibleTreeWithLayer
+};
 
 /*
  * Constructs a spanning tree with tight edges and adjusted the input node's
@@ -2498,8 +2501,8 @@ function shiftRanks(t, g, delta) {
 "use strict";
 
 var rankUtil = require("./util");
-var longestPath = rankUtil.longestPath;
-var feasibleTree = require("./feasible-tree");
+var longestPath = rankUtil.longestPathWithLayer;
+var feasibleTree = require("./feasible-tree").feasibleTreeWithLayer;
 var networkSimplex = require("./network-simplex");
 
 module.exports = rank;
@@ -2548,7 +2551,7 @@ function networkSimplexRanker(g) {
 "use strict";
 
 var _ = require("../lodash");
-var feasibleTree = require("./feasible-tree");
+var feasibleTree = require("./feasible-tree").feasibleTree;
 var slack = require("./util").slack;
 var initRank = require("./util").longestPath;
 var preorder = require("../graphlib").alg.preorder;
@@ -2786,8 +2789,8 @@ function isDescendant(tree, vLabel, rootLabel) {
 var _ = require("../lodash");
 
 module.exports = {
-  // longestPath: longestPath,
-  longestPath: longestPathWithLayer,
+  longestPath: longestPath,
+  longestPathWithLayer: longestPathWithLayer,
   slack: slack,
 };
 
