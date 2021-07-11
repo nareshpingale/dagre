@@ -1,21 +1,21 @@
-const g = new dagre.graphlib.Graph({ multigraph: true, compound: true })
-  .setGraph({})
-  .setDefaultEdgeLabel(function () {
-    return {};
-  });
-
-const rankdir = "LR";
-g.graph().rankdir = rankdir;
-g.setNode("a", { width: 100, height: 100 });
-g.setNode("b", { width: 100, height: 100 });
-g.setEdge("a", "b", {
-  width: 1000,
-  height: 2000,
-  labelpos: "l",
-  labeloffset: 0,
+const Graph = dagre.graphlib.Graph;
+var g = new Graph();
+g.setDefaultEdgeLabel(function () {
+  return {};
 });
+g.setGraph({
+  ranker: 'tight-tree',
+});
+g.setNode("a", { id: "a", width: 20, height: 20 })
+  .setNode("b", { id: "b", width: 20, height: 20, layer: 2 })
+  .setNode("c", { id: "c", width: 20, height: 20 })
+  // .setNode("d", { width: 20, height: 20 })
+  .setEdge("a", "b", { minlen: 1 })
+  .setEdge("a", "c", { minlen: 1 });
+// .setEdge("b", "d");
+
+// feasibleTree(g);
 dagre.layout(g);
-console.log(g.edge("a", "b"));
 
 g.nodes().forEach(function (v) {
   console.log("Node " + v + ": " + JSON.stringify(g.node(v)));
