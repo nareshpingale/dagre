@@ -2842,7 +2842,8 @@ function longestPath(g) {
 }
 
 function longestPathWithLayer(g) {
-  function dfs(v, nextRank) {
+  // forward一遍，赋值层级
+  function dfsForward(v, nextRank) {
     var label = g.node(v);
 
     var currRank = !isNaN(label.layer) ? label.layer : nextRank;
@@ -2854,13 +2855,37 @@ function longestPathWithLayer(g) {
 
     // DFS遍历子节点
     _.map(g.outEdges(v), function (e) {
-      dfs(e.w, currRank + g.edge(e).minlen);
+      dfsForward(e.w, currRank + g.edge(e).minlen);
     });
   }
 
   g.sources().forEach(function (root) {
-    dfs(root, -1); // 默认的dummy root所在层的rank是-1
+    dfsForward(root, -1); // 默认的dummy root所在层的rank是-1
   });
+  
+  // backward一遍，把父节点收紧
+  function dfsBackward(v) {
+    var label = g.node(v);
+
+    // 有指定layer，不改动
+    if (!isNaN(label.layer)) {
+      label.rank = label.layer;
+      return label.rank;
+    }
+
+    // 其它
+    var rank = _.min(_.map(g.outEdges(v), function(e) {
+      return dfsBackward(e.w) - g.edge(e).minlen;
+    }));
+
+    if (!isNaN(rank)) {
+      label.rank = rank;
+    }
+
+    return label.rank;
+  }
+
+  _.forEach(g.sources(), dfsBackward);
 }
 
 /*

@@ -1952,8 +1952,8 @@ const g = createGraph(testData);
 
 // Set an object for the graph label
 g.setGraph({
-  // ranker: "longest-path",
-  ranker: "tight-tree",
+  ranker: "longest-path",
+  // ranker: "tight-tree",
   // ranker: "network-complex",
 });
 
