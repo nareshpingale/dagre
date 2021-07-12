@@ -1880,7 +1880,7 @@ const testData = {
       id: "1",
       width: 20,
       height: 20,
-      layer: 3,
+      // layer: 0,
     },
     {
       id: "2",
@@ -1892,6 +1892,7 @@ const testData = {
       id: "3",
       width: 20,
       height: 20,
+      // layer: 1,
       // fixorder: 0,
     },
     {
@@ -1910,6 +1911,7 @@ const testData = {
       id: "6",
       width: 20,
       height: 20,
+      // layer: 2,
     },
   ],
   edges: [
@@ -1952,8 +1954,8 @@ const g = createGraph(testData);
 
 // Set an object for the graph label
 g.setGraph({
-  ranker: "longest-path",
-  // ranker: "tight-tree",
+  // ranker: "longest-path",
+  ranker: "tight-tree",
   // ranker: "network-complex",
 });
 
