@@ -1,4 +1,4 @@
-const data1 = {
+const simpleGraph1 = {
   nodes: [
     {
       id: "0",
@@ -71,7 +71,7 @@ const data1 = {
   ],
 };
 
-const data2 = {
+const simpleGraph2 = {
   nodes: [
     {
       id: "7",
@@ -96,6 +96,125 @@ const data2 = {
   ],
 };
 
+const issueGraph1 = {
+  nodes: [
+    // {
+    //   id: "9RQmLGueOikkikLvHVO",
+    //   label: "Mysql连接账户",
+    // },
+    {
+      id: "k79zNA0TkCwQPQWw4yn",
+      label: "ETL数据流",
+      color: "#a6cee3",
+    },
+    {
+      id: "GWMF0chbHRKDkENg1hS",
+      label: "ETL数据流2",
+      color: "#1f78b4",
+    },
+    {
+      id: "xCzXirgILRm9fF7gjeb",
+      label: "报告",
+      color: "#b2df8a",
+    },
+    // {
+    //   id: "I2Msu7qhDMQPmGLOduP",
+    //   label: "Mysql数据源",
+    // },
+    // {
+    //   id: "QUCo43VpL9LaPT4QVx0",
+    //   label: "Excel数据源",
+    // },
+    {
+      id: "GxZeEGkky88xKxq1r22",
+      label: "工厂输出表",
+      color: "#33a02c",
+    },
+    {
+      id: "a",
+      label: "a",
+      color: "#fb9a99",
+    },
+    {
+      id: "b",
+      label: "b",
+      color: "#ff7f00",
+    },
+    {
+      id: "c",
+      label: "c",
+      color: "#6a3d9a",
+    },
+    {
+      id: "AKl8iaVQamqiMaMCF7E",
+      label: "csv数据源",
+      color: "#2a9d9a",
+    },
+  ],
+  edges: [
+    // {
+    //   source: "9RQmLGueOikkikLvHVO",
+    //   target: "I2Msu7qhDMQPmGLOduP",
+    // },
+    {
+      source: "k79zNA0TkCwQPQWw4yn",
+      target: "GxZeEGkky88xKxq1r22",
+    },
+    // {
+    //   source: "I2Msu7qhDMQPmGLOduP",
+    //   target: "k79zNA0TkCwQPQWw4yn",
+    // },
+    // {
+    //   source: "QUCo43VpL9LaPT4QVx0",
+    //   target: "k79zNA0TkCwQPQWw4yn",
+    // },
+    {
+      source: "GxZeEGkky88xKxq1r22",
+      target: "xCzXirgILRm9fF7gjeb",
+    },
+    {
+      source: "xCzXirgILRm9fF7gjeb",
+      target: "b",
+    },
+    {
+      source: "xCzXirgILRm9fF7gjeb",
+      target: "c",
+    },
+    {
+      source: "AKl8iaVQamqiMaMCF7E",
+      target: "xCzXirgILRm9fF7gjeb",
+    },
+    {
+      source: "GxZeEGkky88xKxq1r22",
+      target: "GWMF0chbHRKDkENg1hS",
+    },
+    {
+      source: "GWMF0chbHRKDkENg1hS",
+      target: "a",
+    },
+  ],
+};
+
+const issueGraph2 = {
+  nodes: [
+    {
+      id: "vm1234",
+      label: "新增报告",
+    },
+  ],
+  edges: [
+    {
+      source: "a",
+      target: "vm1234",
+    },
+  ],
+};
+
+const data1 = simpleGraph1;
+const data2 = simpleGraph2;
+// const data1 = issueGraph1;
+// const data2 = issueGraph2;
+
 const data1Copy = JSON.parse(JSON.stringify(data1));
 const data2Copy = JSON.parse(JSON.stringify(data2));
 
@@ -104,14 +223,16 @@ document.body.appendChild(div);
 const svg1 = d3
   .select(div)
   .append("svg")
-  .style('margin', 40)
+  .style("margin", 40)
+  .style("overflow", "visible")
   .attr("width", 500)
   .attr("height", 300);
 
 const svg2 = d3
   .select(div)
   .append("svg")
-  .style('margin', 40)
+  .style("margin", 40)
+  .style("overflow", "visible")
   .attr("width", 500)
   .attr("height", 300);
 
@@ -168,7 +289,7 @@ function addSubGraph() {
 
 d3.select("body")
   .append("button")
-  .text('添加子图')
+  .text("添加子图")
   .on("click", () => {
     addSubGraph();
   });
@@ -215,7 +336,7 @@ function drawGraph(g, svg) {
 
   const link = svg.selectAll(".edge").data(edges);
 
-  const easeFunc = d3.easeElasticOut.amplitude(1.).period(0.9);
+  const easeFunc = d3.easeElasticOut.amplitude(1).period(0.9);
 
   link
     .enter()

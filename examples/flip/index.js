@@ -43,7 +43,6 @@ const data = {
     {
       id: "AKl8iaVQamqiMaMCF7E",
       label: "csv数据源",
-      // layer: 0,
     },
   ],
   edges: [
@@ -205,6 +204,7 @@ function drawGraph(g, container) {
     .attr("width", (d) => d.width ?? 20)
     .attr("height", (d) => d.height ?? 20);
 
+    /*
   const label = svg
     .selectAll(".label")
     .data(nodes)
@@ -214,6 +214,7 @@ function drawGraph(g, container) {
     // .attr("x", (d) => d.x)
     // .attr("y", (d) => d.y)
     .text((d) => d.label);
+    */
 
   node.append("title").text((d) => d.id);
 }
