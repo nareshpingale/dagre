@@ -487,8 +487,12 @@ function layout(g, opts, prevG) {
     try {
       time("  runLayout",        function() { runLayout(layoutGraph, time); });
     } catch(e) {
-      console.error('The following error may be caused by improper layer setting, please make sure your manual layer setting does not violate the graph\'s structure:\n', e);
-      return;
+      if (e.message === "Not possible to find intersection inside of the rectangle") {
+        console.error('The following error may be caused by improper layer setting, please make sure your manual layer setting does not violate the graph\'s structure:\n', e);
+        return;
+      } else {
+        throw(e);
+      }
     }
     time("  updateInputGraph", function() { updateInputGraph(g, layoutGraph); });
   });
@@ -2538,7 +2542,8 @@ function rank(g) {
   case "network-simplex": networkSimplexRanker(g); break;
   case "tight-tree": tightTreeRanker(g); break;
   case "longest-path": longestPathRanker(g); break;
-  default: networkSimplexRanker(g);
+  // default: networkSimplexRanker(g);
+  default: tightTreeRanker(g);
   }
 }
 

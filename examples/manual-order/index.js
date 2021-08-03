@@ -1880,7 +1880,7 @@ const testData = {
       id: "1",
       width: 20,
       height: 20,
-      // layer: 0,
+      layer: 1,
     },
     {
       id: "2",
@@ -1955,7 +1955,7 @@ const g = createGraph(issueData);
 // Set an object for the graph label
 g.setGraph({
   // ranker: "longest-path",
-  ranker: "tight-tree",
+  // ranker: "tight-tree",
   // ranker: "network-complex",
 });
 
