@@ -73,7 +73,7 @@ g.setGraph({
 });
 
 dagre.layout(g, {
-  // edgeLabelSpace: false,
+  edgeLabelSpace: false,
   keepNodeOrder: true,
   nodeOrder: data.nodes.map(n => n.id)
 });
