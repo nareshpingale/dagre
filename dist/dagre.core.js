@@ -483,7 +483,13 @@ function layout(g, opts, prevG) {
     if (!(opts && (opts.edgeLabelSpace === false))) {
       time("  makeSpaceForEdgeLabels", function() { makeSpaceForEdgeLabels(layoutGraph); });
     }
-    time("  runLayout",        function() { runLayout(layoutGraph, time); });
+    // TODO: 暂时处理层级设置不正确时的异常报错，提示设置正确的层级
+    try {
+      time("  runLayout",        function() { runLayout(layoutGraph, time); });
+    } catch(e) {
+      console.error('The following error may be caused by improper layer setting, please make sure your manual layer setting does not violate the graph\'s structure:\n', e);
+      return;
+    }
     time("  updateInputGraph", function() { updateInputGraph(g, layoutGraph); });
   });
 }
@@ -1784,13 +1790,13 @@ function compareWithBias(bias) {
       return 1;
     }
     // 重心相同，考虑之前排好的顺序
-    // if (entryV.order !== undefined && entryW.order !== undefined) {
-    //   if (entryV.order < entryW.order) {
-    //     return -1;
-    //   } else if (entryV.order > entryW.order) {
-    //     return 1;
-    //   }
-    // }
+    if (entryV.order !== undefined && entryW.order !== undefined) {
+      if (entryV.order < entryW.order) {
+        return -1;
+      } else if (entryV.order > entryW.order) {
+        return 1;
+      }
+    }
 
     return !bias ? entryV.i - entryW.i : entryW.i - entryV.i;
   };

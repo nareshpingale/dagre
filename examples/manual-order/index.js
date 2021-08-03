@@ -1950,7 +1950,7 @@ const testData = {
   ],
 };
 
-const g = createGraph(testData);
+const g = createGraph(issueData);
 
 // Set an object for the graph label
 g.setGraph({
