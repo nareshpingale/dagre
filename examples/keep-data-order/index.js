@@ -68,12 +68,12 @@ const g = createGraph(data);
 g.setGraph({
   // ranker: "longest-path",
   // ranker: "tight-tree",
-  ranker: "network-complex",
+  // ranker: "network-complex",
   rankdir: 'LR',
 });
 
 dagre.layout(g, {
-  edgeLabelSpace: true,
+  // edgeLabelSpace: false,
   keepNodeOrder: true,
   nodeOrder: data.nodes.map(n => n.id)
 });

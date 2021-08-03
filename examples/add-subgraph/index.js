@@ -210,10 +210,10 @@ const issueGraph2 = {
   ],
 };
 
-const data1 = simpleGraph1;
-const data2 = simpleGraph2;
-// const data1 = issueGraph1;
-// const data2 = issueGraph2;
+// const data1 = simpleGraph1;
+// const data2 = simpleGraph2;
+const data1 = issueGraph1;
+const data2 = issueGraph2;
 
 const data1Copy = JSON.parse(JSON.stringify(data1));
 const data2Copy = JSON.parse(JSON.stringify(data2));
@@ -278,8 +278,8 @@ dagre.layout(
   g2,
   {
     edgeLabelSpace: false,
-  },
-  originGraphCopy
+    prevGraph: originGraphCopy
+  }
 );
 
 function addSubGraph() {

@@ -471,12 +471,12 @@ var initDataOrder = require("./order/init-data-order");
 
 module.exports = layout;
 
-function layout(g, opts, prevG) {
+function layout(g, opts) {
   var time = opts && opts.debugTiming ? util.time : util.notime;
   time("layout", function() {
     // 如果在原图基础上修改，继承原图的order结果
-    if (opts.keepNodeOrder && prevG) {
-      time("  inheritOrder", function() { inheritOrder(g, prevG); });
+    if (opts && !opts.keepNodeOrder && opts.prevGraph) {
+      time("  inheritOrder", function() { inheritOrder(g, opts.prevGraph); });
     }
     var layoutGraph = 
       time("  buildLayoutGraph", function() { return buildLayoutGraph(g); });
@@ -513,7 +513,7 @@ function runLayout(g, time, opts) {
   time("    normalize.run",          function() { normalize.run(g); });
   time("    parentDummyChains",      function() { parentDummyChains(g); });
   time("    addBorderSegments",      function() { addBorderSegments(g); });
-  if (opts.keepNodeOrder) {
+  if (opts && opts.keepNodeOrder) {
     time("    initDataOrder", function() { initDataOrder(g, opts.nodeOrder); });
   }
   time("    order",                  function() { order(g); });
