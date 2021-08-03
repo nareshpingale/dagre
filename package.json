@@ -1,6 +1,6 @@
 {
   "name": "dagrejs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Layered layout for directed acyclic graph",
   "license": "MIT",
   "main": "index.js",
