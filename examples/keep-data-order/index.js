@@ -74,6 +74,8 @@ g.setGraph({
 
 dagre.layout(g, {
   edgeLabelSpace: true,
+  keepNodeOrder: true,
+  nodeOrder: data.nodes.map(n => n.id)
 });
 
 g.nodes().forEach(function (v) {

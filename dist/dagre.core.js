@@ -33,7 +33,7 @@ module.exports = {
   version: require("./lib/version")
 };
 
-},{"./lib/debug":6,"./lib/graphlib":7,"./lib/layout":9,"./lib/util":29,"./lib/version":30}],2:[function(require,module,exports){
+},{"./lib/debug":6,"./lib/graphlib":7,"./lib/layout":9,"./lib/util":30,"./lib/version":31}],2:[function(require,module,exports){
 "use strict";
 
 var _ = require("./lodash");
@@ -142,7 +142,7 @@ function addBorderNode(g, prop, prefix, sg, sgNode, rank) {
   }
 }
 
-},{"./lodash":10,"./util":29}],4:[function(require,module,exports){
+},{"./lodash":10,"./util":30}],4:[function(require,module,exports){
 "use strict";
 
 var _ = require("./lodash");
@@ -310,7 +310,7 @@ function debugOrdering(g) {
   return h;
 }
 
-},{"./graphlib":7,"./lodash":10,"./util":29}],7:[function(require,module,exports){
+},{"./graphlib":7,"./lodash":10,"./util":30}],7:[function(require,module,exports){
 // eslint-disable-next-line no-redeclare
 /* global window */
 
@@ -467,6 +467,7 @@ var order = require("./order");
 var position = require("./position");
 var util = require("./util");
 var Graph = require("./graphlib").Graph;
+var initDataOrder = require("./order/init-data-order");
 
 module.exports = layout;
 
@@ -474,7 +475,7 @@ function layout(g, opts, prevG) {
   var time = opts && opts.debugTiming ? util.time : util.notime;
   time("layout", function() {
     // 如果在原图基础上修改，继承原图的order结果
-    if (prevG) {
+    if (opts.keepNodeOrder && prevG) {
       time("  inheritOrder", function() { inheritOrder(g, prevG); });
     }
     var layoutGraph = 
@@ -485,7 +486,7 @@ function layout(g, opts, prevG) {
     }
     // TODO: 暂时处理层级设置不正确时的异常报错，提示设置正确的层级
     try {
-      time("  runLayout",        function() { runLayout(layoutGraph, time); });
+      time("  runLayout",        function() { runLayout(layoutGraph, time, opts); });
     } catch(e) {
       if (e.message === "Not possible to find intersection inside of the rectangle") {
         console.error('The following error may be caused by improper layer setting, please make sure your manual layer setting does not violate the graph\'s structure:\n', e);
@@ -498,7 +499,7 @@ function layout(g, opts, prevG) {
   });
 }
 
-function runLayout(g, time) {
+function runLayout(g, time, opts) {
   time("    removeSelfEdges",        function() { removeSelfEdges(g); });
   time("    acyclic",                function() { acyclic.run(g); });
   time("    nestingGraph.run",       function() { nestingGraph.run(g); });
@@ -512,6 +513,9 @@ function runLayout(g, time) {
   time("    normalize.run",          function() { normalize.run(g); });
   time("    parentDummyChains",      function() { parentDummyChains(g); });
   time("    addBorderSegments",      function() { addBorderSegments(g); });
+  if (opts.keepNodeOrder) {
+    time("    initDataOrder", function() { initDataOrder(g, opts.nodeOrder); });
+  }
   time("    order",                  function() { order(g); });
   time("    insertSelfEdges",        function() { insertSelfEdges(g); });
   time("    adjustCoordinateSystem", function() { coordinateSystem.adjust(g); });
@@ -886,7 +890,7 @@ function canonicalize(attrs) {
   return newAttrs;
 }
 
-},{"./acyclic":2,"./add-border-segments":3,"./coordinate-system":4,"./graphlib":7,"./lodash":10,"./nesting-graph":11,"./normalize":12,"./order":17,"./parent-dummy-chains":22,"./position":24,"./rank":26,"./util":29}],10:[function(require,module,exports){
+},{"./acyclic":2,"./add-border-segments":3,"./coordinate-system":4,"./graphlib":7,"./lodash":10,"./nesting-graph":11,"./normalize":12,"./order":17,"./order/init-data-order":18,"./parent-dummy-chains":23,"./position":25,"./rank":27,"./util":30}],10:[function(require,module,exports){
 // eslint-disable-next-line no-redeclare
 /* global window */
 
@@ -1067,7 +1071,7 @@ function cleanup(g) {
   });
 }
 
-},{"./lodash":10,"./util":29}],12:[function(require,module,exports){
+},{"./lodash":10,"./util":30}],12:[function(require,module,exports){
 "use strict";
 
 var _ = require("./lodash");
@@ -1159,7 +1163,7 @@ function undo(g) {
   });
 }
 
-},{"./lodash":10,"./util":29}],13:[function(require,module,exports){
+},{"./lodash":10,"./util":30}],13:[function(require,module,exports){
 var _ = require("../lodash");
 
 module.exports = addSubgraphConstraints;
@@ -1469,7 +1473,34 @@ function assignOrder(g, layering) {
   });
 }
 
-},{"../graphlib":7,"../lodash":10,"../util":29,"./add-subgraph-constraints":13,"./build-layer-graph":15,"./cross-count":16,"./init-order":18,"./sort-subgraph":20}],18:[function(require,module,exports){
+},{"../graphlib":7,"../lodash":10,"../util":30,"./add-subgraph-constraints":13,"./build-layer-graph":15,"./cross-count":16,"./init-order":19,"./sort-subgraph":21}],18:[function(require,module,exports){
+"use strict";
+
+var _ = require("../lodash");
+
+module.exports = initDataOrder;
+
+
+/**
+ * 按照数据中的结果设置fixorder
+ */
+function initDataOrder(g, nodeOrder) {
+  var simpleNodes = _.filter(g.nodes(), function(v) {
+    return !g.children(v).length;
+  });
+  var maxRank = _.max(_.map(simpleNodes, function(v) { return g.node(v).rank; }));
+  var layers = _.map(_.range(maxRank + 1), function() { return []; });
+  _.forEach(nodeOrder, function(n) {
+    var node = g.node(n);
+    // 只考虑原有节点，dummy节点需要按照后续算法排出
+    if (node.dummy) {
+      return;
+    }
+    node.fixorder = layers[node.rank].length; // 设置fixorder为当层的顺序
+    layers[node.rank].push(n);
+  });
+}
+},{"../lodash":10}],19:[function(require,module,exports){
 "use strict";
 
 var _ = require("../lodash");
@@ -1522,7 +1553,7 @@ function initOrder(g) {
   return layers;
 }
 
-},{"../lodash":10}],19:[function(require,module,exports){
+},{"../lodash":10}],20:[function(require,module,exports){
 "use strict";
 
 var _ = require("../lodash");
@@ -1646,7 +1677,7 @@ function mergeEntries(target, source) {
   source.merged = true;
 }
 
-},{"../lodash":10}],20:[function(require,module,exports){
+},{"../lodash":10}],21:[function(require,module,exports){
 var _ = require("../lodash");
 var barycenter = require("./barycenter");
 var resolveConflicts = require("./resolve-conflicts");
@@ -1734,7 +1765,7 @@ function mergeBarycenters(target, other) {
   }
 }
 
-},{"../lodash":10,"./barycenter":14,"./resolve-conflicts":19,"./sort":21}],21:[function(require,module,exports){
+},{"../lodash":10,"./barycenter":14,"./resolve-conflicts":20,"./sort":22}],22:[function(require,module,exports){
 var _ = require("../lodash");
 var util = require("../util");
 
@@ -1806,7 +1837,7 @@ function compareWithBias(bias) {
   };
 }
 
-},{"../lodash":10,"../util":29}],22:[function(require,module,exports){
+},{"../lodash":10,"../util":30}],23:[function(require,module,exports){
 var _ = require("./lodash");
 
 module.exports = parentDummyChains;
@@ -1894,7 +1925,7 @@ function postorder(g) {
   return result;
 }
 
-},{"./lodash":10}],23:[function(require,module,exports){
+},{"./lodash":10}],24:[function(require,module,exports){
 "use strict";
 
 var _ = require("../lodash");
@@ -2315,7 +2346,7 @@ function width(g, v) {
   return g.node(v).width;
 }
 
-},{"../graphlib":7,"../lodash":10,"../util":29}],24:[function(require,module,exports){
+},{"../graphlib":7,"../lodash":10,"../util":30}],25:[function(require,module,exports){
 "use strict";
 
 var _ = require("../lodash");
@@ -2347,7 +2378,7 @@ function positionY(g) {
 }
 
 
-},{"../lodash":10,"../util":29,"./bk":23}],25:[function(require,module,exports){
+},{"../lodash":10,"../util":30,"./bk":24}],26:[function(require,module,exports){
 "use strict";
 
 var _ = require("../lodash");
@@ -2508,7 +2539,7 @@ function shiftRanks(t, g, delta) {
   });
 }
 
-},{"../graphlib":7,"../lodash":10,"./util":28}],26:[function(require,module,exports){
+},{"../graphlib":7,"../lodash":10,"./util":29}],27:[function(require,module,exports){
 "use strict";
 
 var rankUtil = require("./util");
@@ -2559,7 +2590,7 @@ function networkSimplexRanker(g) {
   networkSimplex(g);
 }
 
-},{"./feasible-tree":25,"./network-simplex":27,"./util":28}],27:[function(require,module,exports){
+},{"./feasible-tree":26,"./network-simplex":28,"./util":29}],28:[function(require,module,exports){
 "use strict";
 
 var _ = require("../lodash");
@@ -2795,7 +2826,7 @@ function isDescendant(tree, vLabel, rootLabel) {
   return rootLabel.low <= vLabel.lim && vLabel.lim <= rootLabel.lim;
 }
 
-},{"../graphlib":7,"../lodash":10,"../util":29,"./feasible-tree":25,"./util":28}],28:[function(require,module,exports){
+},{"../graphlib":7,"../lodash":10,"../util":30,"./feasible-tree":26,"./util":29}],29:[function(require,module,exports){
 "use strict";
 
 var _ = require("../lodash");
@@ -2951,7 +2982,7 @@ function slack(g, e) {
   return g.node(e.w).rank - g.node(e.v).rank - g.edge(e).minlen;
 }
 
-},{"../lodash":10}],29:[function(require,module,exports){
+},{"../lodash":10}],30:[function(require,module,exports){
 /* eslint "no-console": off */
 
 "use strict";
@@ -3191,7 +3222,7 @@ function notime(name, fn) {
   return fn();
 }
 
-},{"./graphlib":7,"./lodash":10}],30:[function(require,module,exports){
+},{"./graphlib":7,"./lodash":10}],31:[function(require,module,exports){
 module.exports = "0.8.6-pre";
 
 },{}]},{},[1])(1)
