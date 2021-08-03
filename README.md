@@ -95,7 +95,7 @@ Caution:
 When re-layout with small modification, we may want to keep origin layout result. Now we can pass the origin graph to new layout function:
 
 ```js
-dagre.layout(originGraph) // lyout() will internally modify originGraph
+dagre.layout(originGraph) // layout() will internally modify originGraph
 dagre.layout(
   g,
   {
