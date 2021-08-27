@@ -98,10 +98,6 @@ const simpleGraph2 = {
 
 const issueGraph1 = {
   nodes: [
-    // {
-    //   id: "9RQmLGueOikkikLvHVO",
-    //   label: "Mysql连接账户",
-    // },
     {
       id: "k79zNA0TkCwQPQWw4yn",
       label: "ETL数据流",
@@ -117,14 +113,6 @@ const issueGraph1 = {
       label: "报告",
       color: "#b2df8a",
     },
-    // {
-    //   id: "I2Msu7qhDMQPmGLOduP",
-    //   label: "Mysql数据源",
-    // },
-    // {
-    //   id: "QUCo43VpL9LaPT4QVx0",
-    //   label: "Excel数据源",
-    // },
     {
       id: "GxZeEGkky88xKxq1r22",
       label: "工厂输出表",
@@ -241,14 +229,15 @@ originGraph.setGraph({
   rankdir: "LR",
 });
 dagre.layout(originGraph, {
-  edgeLabelSpace: false,
+  edgeLabelSpace: true,
 });
+console.log(originGraph);
 const originGraphCopy = createGraph(data1Copy);
 originGraphCopy.setGraph({
   rankdir: "LR",
 });
 dagre.layout(originGraphCopy, {
-  edgeLabelSpace: false,
+  edgeLabelSpace: true,
 });
 
 drawGraph(originGraph, svg1);
@@ -264,7 +253,7 @@ g1.setGraph({
 });
 
 dagre.layout(g1, {
-  edgeLabelSpace: false,
+  edgeLabelSpace: true,
 });
 
 const g2 = createGraph({
@@ -277,7 +266,7 @@ g2.setGraph({
 dagre.layout(
   g2,
   {
-    edgeLabelSpace: false,
+    edgeLabelSpace: true,
     prevGraph: originGraphCopy
   }
 );

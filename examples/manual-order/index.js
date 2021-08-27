@@ -1500,22 +1500,22 @@ const issueDataOrigin = {
 };
 
 issueDataOrigin.nodes.forEach((n) => {
-  n.width = 20;
+  n.width = 25;
   n.height = 20;
 });
 
 let issueData = JSON.parse(JSON.stringify(issueDataOrigin));
 
-issueData = removeBranch(issueData, "mergeNode11-1623317640335"); // X
-// issueData = removeBranch(issueData, "node1621480359381"); // O
-issueData = removeBranch(issueData, "branchnode51-1623317640336");
-issueData = removeBranch(issueData, "branchnode57-1623317640336");
-issueData = removeBranch(issueData, "branchnode84-1623317640336");
-issueData = removeBranch(issueData, "branchnode91-1623317640336");
-issueData = removeBranch(issueData, "branchnode100-1623317640336");
-issueData = removeBranch(issueData, "branchnode79-1623317640336");
-// issueData = removeBranch(issueData, "node20-1623317640336");
-issueData = removeBranch(issueData, "node21-1623317640336");
+// issueData = removeBranch(issueData, "mergeNode11-1623317640335"); // X
+// // issueData = removeBranch(issueData, "node1621480359381"); // O
+// issueData = removeBranch(issueData, "branchnode51-1623317640336");
+// issueData = removeBranch(issueData, "branchnode57-1623317640336");
+// issueData = removeBranch(issueData, "branchnode84-1623317640336");
+// issueData = removeBranch(issueData, "branchnode91-1623317640336");
+// issueData = removeBranch(issueData, "branchnode100-1623317640336");
+// issueData = removeBranch(issueData, "branchnode79-1623317640336");
+// // issueData = removeBranch(issueData, "node20-1623317640336");
+// issueData = removeBranch(issueData, "node21-1623317640336");
 // issueData = removeBranch(issueData, "node40-1623317640336"); // O
 
 function removeBranch(g, node) {
@@ -1960,7 +1960,7 @@ g.setGraph({
 });
 
 dagre.layout(g, {
-  edgeLabelSpace: false,
+  edgeLabelSpace: true,
 });
 
 g.nodes().forEach(function (v) {
@@ -2031,12 +2031,13 @@ function drawGraph(g, container) {
     .data(nodes)
     .enter()
     .append("rect")
-    .style("fill", "#aaaaaa")
+    .style("fill", "#31a354")
     .attr("class", "node")
-    .attr("x", (d) => d.x - (d.width ?? 20) / 2)
-    .attr("y", (d) => d.y - (d.height ?? 20) / 2)
-    .attr("width", (d) => d.width ?? 20)
-    .attr("height", (d) => d.height ?? 20);
+    .attr("rx", 5)
+    .attr("x", (d) => d.x - (d.width ?? 30) / 2)
+    .attr("y", (d) => d.y - (d.height ?? 30) / 2)
+    .attr("width", (d) => d.width ?? 30)
+    .attr("height", (d) => d.height ?? 30);
 
   /*
   const label = svg

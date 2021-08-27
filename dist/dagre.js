@@ -1444,6 +1444,20 @@ function order(g) {
     }
   }
 
+  // consider use previous result, maybe somewhat reduendant
+  layering = initOrder(g);
+  assignOrder(g, layering);
+  for (i = 0, lastBest = 0; lastBest < 4; ++i, ++lastBest) {
+    sweepLayerGraphs(i % 2 ? downLayerGraphs : upLayerGraphs, i % 4 >= 2, true);
+
+    layering = util.buildLayerMatrix(g);
+    cc = crossCount(g, layering);
+    if (cc < bestCC) {
+      lastBest = 0;
+      best = _.cloneDeep(layering);
+      bestCC = cc;
+    }
+  }
   assignOrder(g, best);
 }
 
@@ -1453,11 +1467,11 @@ function buildLayerGraphs(g, ranks, relationship) {
   });
 }
 
-function sweepLayerGraphs(layerGraphs, biasRight) {
+function sweepLayerGraphs(layerGraphs, biasRight, usePrev) {
   var cg = new Graph();
   _.forEach(layerGraphs, function(lg) {
     var root = lg.graph().root;
-    var sorted = sortSubgraph(lg, root, cg, biasRight);
+    var sorted = sortSubgraph(lg, root, cg, biasRight, usePrev);
     _.forEach(sorted.vs, function(v, i) {
       lg.node(v).order = i;
     });
@@ -1685,7 +1699,7 @@ var sort = require("./sort");
 
 module.exports = sortSubgraph;
 
-function sortSubgraph(g, v, cg, biasRight) {
+function sortSubgraph(g, v, cg, biasRight, usePrev) {
   var movable = g.children(v);
   // fixorder的点不参与排序（这个方案不合适，只排了新增节点，和原来的分离）
   // var movable = _.filter(g.children(v), function(v) { return g.node(v).fixorder === undefined; });
@@ -1722,7 +1736,7 @@ function sortSubgraph(g, v, cg, biasRight) {
     e.order = node.order;
   });
 
-  var result = sort(entries, biasRight);
+  var result = sort(entries, biasRight, usePrev);
 
   if (bl) {
     result.vs = _.flatten([bl, result.vs, br], true);
@@ -1771,7 +1785,7 @@ var util = require("../util");
 
 module.exports = sort;
 
-function sort(entries, biasRight) {
+function sort(entries, biasRight, usePrev) {
   var parts = util.partition(entries, function(entry) {
     // NOTE: 有fixorder的也可以排
     return (_.has(entry, "fixorder") && !isNaN(entry.fixorder)) || _.has(entry, "barycenter");
@@ -1783,7 +1797,7 @@ function sort(entries, biasRight) {
     weight = 0,
     vsIndex = 0;
 
-  sortable.sort(compareWithBias(!!biasRight));
+  sortable.sort(compareWithBias(!!biasRight, !!usePrev));
 
   vsIndex = consumeUnsortable(vs, unsortable, vsIndex);
 
@@ -1813,7 +1827,10 @@ function consumeUnsortable(vs, unsortable, index) {
   return index;
 }
 
-function compareWithBias(bias) {
+/**
+ * 配置是否考虑使用之前的布局结果
+ */
+function compareWithBias(bias, usePrev) {
   return function(entryV, entryW) {
     // 排序的时候先判断fixorder，不行再判断重心
     if (entryV.fixorder !== undefined && entryW.fixorder !== undefined) {
@@ -1825,7 +1842,7 @@ function compareWithBias(bias) {
       return 1;
     }
     // 重心相同，考虑之前排好的顺序
-    if (entryV.order !== undefined && entryW.order !== undefined) {
+    if (usePrev && entryV.order !== undefined && entryW.order !== undefined) {
       if (entryV.order < entryW.order) {
         return -1;
       } else if (entryV.order > entryW.order) {
@@ -3223,7 +3240,7 @@ function notime(name, fn) {
 }
 
 },{"./graphlib":7,"./lodash":10}],31:[function(require,module,exports){
-module.exports = "0.8.6-pre";
+module.exports = "0.1.1";
 
 },{}],32:[function(require,module,exports){
 /**
