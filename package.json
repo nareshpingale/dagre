@@ -1,6 +1,6 @@
 {
   "name": "@pinging/dagrejs",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Layered layout for directed acyclic graph",
   "license": "MIT",
   "main": "index.js",
